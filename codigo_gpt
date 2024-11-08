@@ -1,0 +1,144 @@
+import pygame
+import math
+
+# Inicializando o pygame
+pygame.init()
+
+# Definir cores
+PRETO = (0, 0, 0)
+BRANCO = (255, 255, 255)
+AZUL_CIELO = (135, 206, 250)  # Cor de fundo da tela #87CEFA
+LARANJA = (255, 165, 0)  # Cor da bola de basquete
+VERMELHO = (255, 0, 0)  # Cor do aro
+PRETO_BOLA = (0, 0, 0)  # Cor das faixas da bola
+
+# Definir a tela do jogo
+LARGURA_TELA = 800
+ALTURA_TELA = 600
+tela = pygame.display.set_mode((LARGURA_TELA, ALTURA_TELA))
+pygame.display.set_caption("Simulação de Cesta de Basquete")
+
+# Definir a cesta
+cesta_pos_x = LARGURA_TELA // 2 - 50
+cesta_pos_y = 150
+cesta_largura = 100
+cesta_altura = 10
+aro_raio = 30  # Raio do aro
+
+# Definir o quadro da cesta
+quadro_largura = 80
+quadro_altura = 50
+
+# Definir a bola
+bola_raio = 15
+bola_x = LARGURA_TELA // 2
+bola_y = ALTURA_TELA - 50
+bola_vel_x = 0
+bola_vel_y = 0
+gravidade = 0.5
+
+# Pontuação
+pontos = 0
+
+# Fonte para exibir a pontuação
+fonte = pygame.font.SysFont("Arial", 30)
+
+# Função para desenhar a bola de basquete
+def desenhar_bola():
+    # Desenhar a bola de basquete laranja com faixas pretas
+    pygame.draw.circle(tela, LARANJA, (int(bola_x), int(bola_y)), bola_raio)
+    # Desenhar as faixas pretas na bola (faixas da bola de basquete)
+    pygame.draw.line(tela, PRETO_BOLA, (bola_x - bola_raio, bola_y), (bola_x + bola_raio, bola_y), 3)
+    pygame.draw.line(tela, PRETO_BOLA, (bola_x, bola_y - bola_raio), (bola_x, bola_y + bola_raio), 3)
+
+# Função para desenhar o quadro atrás do aro (visão frontal)
+def desenhar_quadro():
+    # Desenhar o quadro da cesta
+    pygame.draw.rect(tela, PRETO, (cesta_pos_x + cesta_largura // 2 - quadro_largura // 2, cesta_pos_y - quadro_altura,
+                                  quadro_largura, quadro_altura))
+
+# Função para desenhar o aro (visão frontal)
+def desenhar_cesta():
+    # Aro visto de frente: círculo com borda vermelha
+    pygame.draw.circle(tela, VERMELHO, (cesta_pos_x + cesta_largura // 2, cesta_pos_y), aro_raio, 5)
+
+# Função para desenhar o fundo
+def desenhar_fundo():
+    tela.fill(AZUL_CIELO)  # Cor do fundo #87CEFA
+
+# Função para desenhar o jogo
+def desenhar_jogo():
+    desenhar_fundo()  # Fundo azul claro
+    desenhar_quadro()  # Quadro atrás do aro
+    desenhar_cesta()   # Aro
+    desenhar_bola()    # Bola de basquete
+    # Exibir a pontuação
+    texto = fonte.render(f'Pontos: {pontos}', True, BRANCO)
+    tela.blit(texto, (10, 10))
+    pygame.display.flip()  # Atualizar a tela
+
+# Função para verificar se a bola entrou na cesta
+def verificar_cesta():
+    global pontos
+    # Verificar se a bola está dentro do aro e dentro da área da cesta
+    if (bola_x > cesta_pos_x + cesta_largura // 2 - aro_raio and bola_x < cesta_pos_x + cesta_largura // 2 + aro_raio) and \
+       (bola_y + bola_raio >= cesta_pos_y and bola_y - bola_raio <= cesta_pos_y + 10):
+        pontos += 1
+        resetar_bola()  # Resetar a posição da bola
+
+# Função para resetar a bola
+def resetar_bola():
+    global bola_x, bola_y, bola_vel_x, bola_vel_y
+    bola_x = LARGURA_TELA // 2
+    bola_y = ALTURA_TELA - 50
+    bola_vel_x = 0
+    bola_vel_y = 0
+
+# Função principal do jogo
+def main():
+    global bola_x, bola_y, bola_vel_x, bola_vel_y
+    
+    rodando = True
+    clicado = False
+    
+    while rodando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                rodando = False
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                if not clicado:
+                    clicado = True
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    # Calcular a direção e a velocidade do arremesso baseado na posição do clique
+                    dx = mouse_x - bola_x
+                    dy = mouse_y - bola_y
+                    distancia = math.hypot(dx, dy)
+                    if distancia > 0:
+                        bola_vel_x = (dx / distancia) * 10
+                        bola_vel_y = (dy / distancia) * 10
+            if evento.type == pygame.MOUSEBUTTONUP:
+                clicado = False
+
+        # Atualizar a física da bola
+        bola_x += bola_vel_x
+        bola_y += bola_vel_y
+        bola_vel_y += gravidade
+
+        # Verificar se a bola entrou na cesta
+        verificar_cesta()
+
+        # Verificar se a bola caiu fora da tela
+        if bola_y > ALTURA_TELA:
+            resetar_bola()
+
+        # Desenhar os elementos do jogo
+        desenhar_jogo()
+
+        # Controlar a taxa de atualização
+        pygame.time.Clock().tick(60)
+
+    pygame.quit()
+
+# Rodar o jogo
+if __name__ == "__main__":
+    main()
